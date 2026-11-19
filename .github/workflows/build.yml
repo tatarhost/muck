@@ -43,7 +43,7 @@ jobs:
 
           $managed = "$env:GITHUB_WORKSPACE\Muck_Data\Managed"
           New-Item -ItemType Directory -Path $managed -Force | Out-Null
-          $required = @("UnityEngine.CoreModule.dll", "UnityEngine.IMGUIModule.dll", "UnityEngine.InputLegacyModule.dll")
+          $required = @("UnityEngine.CoreModule.dll", "UnityEngine.IMGUIModule.dll", "UnityEngine.InputLegacyModule.dll", "UnityEngine.UIModule.dll")
 
           foreach ($name in $required) {
             $file = Get-ChildItem -Path "$env:RUNNER_TEMP\unity-managed" -Filter $name -Recurse |
