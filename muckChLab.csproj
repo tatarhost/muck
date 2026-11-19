@@ -29,6 +29,10 @@
       <HintPath>$(MuckManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(MuckManagedDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine" Condition="Exists('$(MuckManagedDir)\UnityEngine.dll')">
       <HintPath>$(MuckManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
