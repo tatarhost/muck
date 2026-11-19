@@ -1,0 +1,85 @@
+name: Build muckChLab
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Download BepInEx 5.4.23.6
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $url = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.6/BepInEx_win_x64_5.4.23.6.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\bepinex.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\bepinex.zip" -DestinationPath "$env:GITHUB_WORKSPACE\deps\BepInEx" -Force
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE\deps\BepInEx\BepInEx\core\BepInEx.dll")) {
+            throw "BepInEx.dll was not found in the downloaded package."
+          }
+
+      - name: Download Unity 2019.4.40 managed modules
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $url = "https://unity.bepinex.dev/libraries/2019.4.40.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\unity-managed.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\unity-managed.zip" -DestinationPath "$env:RUNNER_TEMP\unity-managed" -Force
+
+          $managed = "$env:GITHUB_WORKSPACE\Muck_Data\Managed"
+          New-Item -ItemType Directory -Path $managed -Force | Out-Null
+          $required = @("UnityEngine.CoreModule.dll", "UnityEngine.IMGUIModule.dll", "UnityEngine.InputLegacyModule.dll")
+
+          foreach ($name in $required) {
+            $file = Get-ChildItem -Path "$env:RUNNER_TEMP\unity-managed" -Filter $name -Recurse |
+              Select-Object -First 1
+            if ($null -eq $file) {
+              throw "Required Unity assembly not found: $name"
+            }
+            Copy-Item $file.FullName (Join-Path $managed $name) -Force
+          }
+
+          $unityBase = Get-ChildItem -Path "$env:RUNNER_TEMP\unity-managed" -Filter "UnityEngine.dll" -Recurse |
+            Select-Object -First 1
+          if ($null -ne $unityBase) {
+            Copy-Item $unityBase.FullName (Join-Path $managed "UnityEngine.dll") -Force
+          }
+
+      - name: Build plugin
+        run: dotnet build muckChLab.csproj --configuration Release --verbosity minimal
+
+      - name: Package plugin
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dll = "$env:GITHUB_WORKSPACE\bin\Release\netstandard2.0\muckChLab.dll"
+          if (-not (Test-Path $dll)) { throw "Build output missing: $dll" }
+
+          $package = "$env:GITHUB_WORKSPACE\dist\muckChLab"
+          New-Item -ItemType Directory -Path "$package\BepInEx\plugins" -Force | Out-Null
+          Copy-Item $dll "$package\BepInEx\plugins\muckChLab.dll" -Force
+          Copy-Item "$env:GITHUB_WORKSPACE\README.md" "$package\README.txt" -Force
+          Compress-Archive -Path "$package\*" -DestinationPath "$env:GITHUB_WORKSPACE\dist\muckChLab.zip" -Force
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: muckChLab
+          path: dist/muckChLab.zip
+          if-no-files-found: error
+          retention-days: 14
