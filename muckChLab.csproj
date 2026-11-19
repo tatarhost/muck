@@ -33,6 +33,14 @@
       <HintPath>$(MuckManagedDir)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(MuckManagedDir)\UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>$(MuckManagedDir)\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine" Condition="Exists('$(MuckManagedDir)\UnityEngine.dll')">
       <HintPath>$(MuckManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
